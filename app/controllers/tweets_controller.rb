@@ -1,6 +1,6 @@
 class TweetsController < ApplicationController
   def index
-    @tweets = tweet.all
+    @tweets = Tweet.all.order(created_at: :desc)
     render 'tweets/index' # http request points to route that points to here that points to index.jbuilder file
   end
 
@@ -35,7 +35,7 @@ class TweetsController < ApplicationController
   end
 
   def destroy
-    @tweet = tweet.find_by(id: params[:id])
+    @tweet = Tweet.find_by(id: params[:id])
 
     if @tweet&.destroy
       render json: { success: true }
@@ -45,13 +45,13 @@ class TweetsController < ApplicationController
   end
 
   def mark_complete
-    @tweet = tweet.find_by(id: params[:id])
+    @tweet = Tweet.find_by(id: params[:id])
 
     render 'tweets/tweets' if @tweet&.tweets(completed: true)
   end
 
   def mark_active
-    @tweet = tweet.find_by(id: params[:id])
+    @tweet = Tweet.find_by(id: params[:id])
 
     render 'tweets/tweets' if @tweet&.tweets(completed: false)
   end
@@ -59,6 +59,6 @@ class TweetsController < ApplicationController
   private
 
   def tweet_params
-    params.require(:tweet).permit(:content)
+    params.require(:tweet).permit(:message)
   end
 end
