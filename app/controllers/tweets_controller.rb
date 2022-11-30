@@ -1,59 +1,45 @@
 class TweetsController < ApplicationController
   def index
     @tweets = Tweet.all.order(created_at: :desc)
-    render 'tweets/index' # http request points to route that points to here that points to index.jbuilder file
-  end
-
-  def index_by_current_user
-    token = cookies.signed[:twitter_session_token]
-    session = Session.find_by(token: token)
-
-    if session
-      @tweets = session.user.tweets
-      render 'tweets/index' # http request points to route that points to here that points to index.jbuilder file
-    else
-      render json: { tweets: [] }
-    end
+    render 'tweets/index'
   end
 
   def create
     token = cookies.signed[:twitter_session_token]
     session = Session.find_by(token: token)
+    user = session.user
+    @tweet = user.tweets.new(tweet_params)
 
-    if session
-      user = session.user
-      @tweet = user.tweets.new(tweet_params)
-
-      if @tweet.save
-        render 'tweets/create' # points to create.jbuilder file in tweets folder
-      else
-        render json: { success: false }
-      end
-    else
-      render json: { success: false }
-    end
+    render 'tweets/create' if @tweet.save
   end
 
   def destroy
-    @tweet = Tweet.find_by(id: params[:id])
+    token = cookies.signed[:twitter_session_token]
+    session = Session.find_by(token: token)
 
-    if @tweet&.destroy
-      render json: { success: true }
+    return render json: { success: false } unless session
+
+    user = session.user
+    tweet = Tweet.find_by(id: params[:id])
+
+    if tweet && (tweet.user == user) && tweet.destroy
+      render json: {
+        success: true
+      }
     else
-      render json: { success: false }
+      render json: {
+        success: false
+      }
     end
   end
 
-  def mark_complete
-    @tweet = Tweet.find_by(id: params[:id])
+  def index_by_user
+    user = User.find_by(username: params[:username])
 
-    render 'tweets/tweets' if @tweet&.tweets(completed: true)
-  end
-
-  def mark_active
-    @tweet = Tweet.find_by(id: params[:id])
-
-    render 'tweets/tweets' if @tweet&.tweets(completed: false)
+    if user
+      @tweets = user.tweets
+      render 'tweets/index'
+    end
   end
 
   private
